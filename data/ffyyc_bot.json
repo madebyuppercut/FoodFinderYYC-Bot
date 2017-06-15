@@ -1,0 +1,35 @@
+{
+	"greeting": "Hello. Welcome to Food Finder YYC!",
+	"askDay": {
+		"text": "Are you looking for food for\n(1)today or (2)tomorrow?",
+		"validResponses": ["1", "2", "3", "today", "tomorrow"],
+		"convoKey": "day"
+	},
+	"askLocationType": {
+		"text": "How would you like to tell us your location?\n(1)address\n(2)intersection\n(3)place",
+		"validResponses": ["1", "2", "3", "address", "intersection", "place"],
+		"convoKey": "locationType"
+	},
+	"askAddress": {
+		"text": "Please tell me your address.",
+		"validResponses": [],
+		"convoKey": "address"
+	},
+	"askIntersection1": {
+		"text": "Please tell me the full name of the first street at the intersection.",
+		"validResponses": [],
+		"convoKey": "street1"
+	},
+	"askIntersection2": {
+		"text": "Please tell me the full name of the second street at the intersection.",
+		"validResponses": [],
+		"convoKey": "street2"
+	},
+	"askPlace": {
+		"text": "What place are you close to?",
+		"validResponses": [],
+		"convoKey": "place"
+	},
+	"timeout": "This conversation has timed out.",
+	"goodbye": "Thank you for using Food Finder YYC!"
+}
