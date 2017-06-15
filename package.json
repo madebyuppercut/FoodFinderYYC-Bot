@@ -1,0 +1,31 @@
+{
+  "name": "food-finder-bot",
+  "version": "1.0.0",
+  "description": "Chat bot for FoodFinderYYC",
+  "engines": {
+    "node": "6.10.2"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "nf start"
+  },
+  "dependencies": {
+    "@google/maps": "^0.3.1",
+    "botkit-sms": "^1.1.1",
+    "express": "4.15.2",
+    "foreman": "^2.0.0",
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^19.0.0",
+    "parse": "^1.9.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/madebyuppercut/FoodFinderYYC-Bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/madebyuppercut/FoodFinderYYC-Bot/issues"
+  },
+  "homepage": "https://github.com/madebyuppercut/FoodFinderYYC-Bot#readme",
+  "author": "Made By Uppercut",
+  "license": "ISC"
+}

@@ -1,0 +1,40 @@
+{
+	"greeting": "Hello! Welcome to Food Finder YYC.\n",
+	"askDay": {
+		"text": "Are you looking for food for:\n\n(1) Today\n(2) Tomorrow",
+		"validResponses": ["1", "2", "today", "tomorrow"],
+		"convoKey": "day"
+	},
+	"askLocationType": {
+		"text": "How would you like to tell us your location?\n\n(1) Address\n(2) Intersection\n(3) Closest Public or Catholic School",
+		"validResponses": ["1", "2", "3", "address", "intersection", "school"],
+		"convoKey": "locationType"
+	},
+	"askAddress": {
+		"text": "What is your address? (example: 101 9 Ave SW)",
+		"validResponses": [],
+		"errorFormat": "We didn't find the address %s. Please confirm the address is correct or try a different method.\n\n",
+		"convoKey": "address"
+	},
+	"askIntersection1": {
+		"text": "What is the name or street number of the first street or avenue at the intersection? (example: Kensington Rd)",
+		"validResponses": [],
+		"convoKey": "street1"
+	},
+	"askIntersection2": {
+		"text": "What is the name or street number of the second street or avenue at the intersection? (example: 14 St)",
+		"validResponses": [],
+		"errorFormat": "We didn't find the intersection of %s and %s. Please confirm the street names or try a different method.\n\n",
+		"convoKey": "street2"
+	},
+	"askPlace": {
+		"text": "What is the name of the school closest to you? (example: Alex Munro)",
+		"validResponses": [],
+		"errorFormat": "We didn't recognize the school %s. Please confirm the school name or try a different method.\n\n",
+		"convoKey": "place"
+	},
+	"results": "Here are the closest locations to %s %s:\n\n",
+	"goodbye": "Thank you for using Food Finder YYC! Remember to add us to your contact info for future reference.",
+	"noResults": "We didn't find any available locations. Please try again later or call 211 for a referral to local meal programs.",
+	"timeout": "This conversation has timed out."
+}
