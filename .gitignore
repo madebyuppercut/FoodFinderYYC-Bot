@@ -64,8 +64,6 @@ xcuserdata
 
 *.moved-aside
 
-/local
-
 # npm
 /node_modules
 
