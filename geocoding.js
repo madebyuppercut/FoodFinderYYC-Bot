@@ -1,8 +1,13 @@
 (function(module) {
 	"use strict";
 
+	var googleLocal;
+	if (process.env.NODE_ENV == "local") {
+		googleLocal = require("./local/google.json");
+	}
+
 	var googleMapsClient = require("@google/maps").createClient({
-		key: process.env.GOOGLE_APIKEY
+		key: process.env.GOOGLE_APIKEY || googleLocal.apiKey
 	});
 
 	/**

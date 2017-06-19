@@ -4,9 +4,10 @@ var fs = require("fs");
 var readline = require("readline");
 var google = require("googleapis");
 var googleAuth = require("google-auth-library");
+var googleLocal = require("./local/google.json");
 
 var tokenDir = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + "/.credentials/";
-var tokenPath = tokenDir + "sheets.googleapis.com-nodejs-ffyyc.json";
+var tokenPath = tokenDir + googleLocal.tokenFile;
 
 fs.readFile("./local/google_client_secret.json", function(err, content) {
   if (err) {
@@ -86,7 +87,7 @@ function generatePlacesData(auth) {
   var sheets = google.sheets("v4");
   sheets.spreadsheets.values.get({
     auth: auth,
-    spreadsheetId: process.env.GOOGLE_SPREADSHEETID,
+    spreadsheetId: googleLocal.spreadsheetId,
     range: "Sheet1!D2:I"
   }, function(err, response) {
     if (err) {
