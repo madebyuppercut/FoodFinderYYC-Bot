@@ -45,6 +45,8 @@ function TestConvo(userInput, logFile) {
 	this.nextConvo = false;
 	this.userResponse = _nextUserResponse(this.userInput);
 	this.responses = {};
+	this.source_message = {};
+	this.source_message.user = "+15555555555";
 
 	var loggerOutput = fs.createWriteStream("./tests/" + logFile);
 	this.logger = new Console(loggerOutput);

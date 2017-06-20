@@ -172,10 +172,28 @@
 	/**
 	 * The Bot asks the user how they wish to let it know what their current location is.
 	 */
-	function _askLocationType(convoData, convo, prefix) {
+	function _askLocationType(user, convoData, convo, prefix) {
 		var askLocationType = convoData.askLocationType;
 		var askText = prefix + askLocationType.text;
 		convo.ask(askText, function(response, convo) {
+			if (user != null) {
+				var ConvoStep = Parse.Object.extend("ConvoStep");
+				var step = new ConvoStep();
+				step.set("phoneNumber", user.phoneNumber);
+				step.set("session", user.sessionNumber);
+				step.set("stepId", askLocationType.stepId);
+				step.set("response", response.text);
+				step.save(null, {
+					success: function(obj) {
+
+					},
+					error: function(error) {
+						console.error("Failed to save convo step:");
+						console.error(error);
+					}
+				});
+			}
+
 			if (askLocationType.validResponses.includes(response.text.toLowerCase())) {
 				var locationType = response.text.toLowerCase();
 				if (locationType == "1" || locationType == "address") {
@@ -193,28 +211,7 @@
 		}, {key: askLocationType.convoKey});
 	}
 
-	/**
-	 * Initiates a conversation instance with the Bot where it greets the user
-	 * and asks the first question.
-	 */
-	function _startConversation(convo) {
-		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
-		Parse.serverURL = process.env.PARSE_SERVERURL;
-
-		var Step = Parse.Object.extend("Step");
-		var step = new Step();
-		step.set("phoneNumber", "+15550000");
-		step.set("session", 0);
-		step.set("message", convo.source_message.user);
-		step.save(null, {
-			success: function(obj) {
-				console.log("Step saved.");
-			},
-			error: function(error) {
-				console.log("Error saving step: " + error);
-			}
-		});
-
+	function _startWithUser(user, convoData, convo) {
 		var greeting = convoData.greeting;
 		var askDay = convoData.askDay;
 		var fullGreeting = greeting + askDay.text;
@@ -226,11 +223,62 @@
 				convo.stop();
 			});
 
+			if (user != null) {
+				var ConvoStep = Parse.Object.extend("ConvoStep");
+				var step = new ConvoStep();
+				step.set("phoneNumber", user.phoneNumber);
+				step.set("session", user.sessionNumber);
+				step.set("stepId", askDay.stepId);
+				step.set("response", response.text);
+				step.save(null, {
+					success: function(obj) {
+
+					},
+					error: function(error) {
+						console.error("Failed to save convo step:");
+						console.error(error);
+					}
+				});
+			}
+
 			if (askDay.validResponses.includes(response.text.toLowerCase())) {
 				_askLocationType(convoData, convo, "");
 				convo.next();
 			}
 		}, {key: askDay.convoKey});
+	}
+
+	/**
+	 * Initiates a conversation instance with the Bot where it greets the user
+	 * and asks the first question.
+	 */
+	function _startConversation(convo) {
+		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
+		Parse.serverURL = process.env.PARSE_SERVERURL;
+
+		var user = {};
+		user.phoneNumber = convo.source_message.user;
+
+		var ConvoStep = Parse.Object.extend("ConvoStep");
+		var query = new Parse.Query(ConvoStep);
+		query.equalTo("phoneNumber", user.phoneNumber);
+		query.descending("session");
+		query.find({
+			success: function(results) {
+				if (results.length > 0) {
+					var latest = results[0];
+					user.sessionNumber = latest.get("session") + 1;
+				} else {
+					user.sessionNumber = 0;
+				}
+				_startWithUser(user, convoData, convo);
+			},
+			error: function(error) {
+				console.error("Error querying ConvoStep for user: " + user.phoneNumber);
+				console.error(error);
+				_startWithUser(null, convoData, convo);
+			}
+		});
 	}
 
 	module.exports = {
