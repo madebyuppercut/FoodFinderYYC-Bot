@@ -198,8 +198,22 @@
 	 * and asks the first question.
 	 */
 	function _startConversation(convo) {
-		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY);
+		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
 		Parse.serverURL = process.env.PARSE_SERVERURL;
+
+		var Step = Parse.Object.extend("Step");
+		var step = new Step();
+		step.set("phoneNumber", "+15550000");
+		step.set("session", 0);
+		step.set("message", convo.source_message.user);
+		step.save(null, {
+			success: function(obj) {
+				console.log("Step saved.");
+			},
+			error: function(error) {
+				console.log("Error saving step: " + error);
+			}
+		});
 
 		var greeting = convoData.greeting;
 		var askDay = convoData.askDay;

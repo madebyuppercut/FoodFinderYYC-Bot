@@ -18,6 +18,7 @@ controller.setupWebserver(port, function(err, webserver) {
 });
 
 controller.hears(FFYYCBot.hears, "message_received", function(bot, message) {
+	console.log("[HEARD]: " + message);
 	bot.startConversation(message, function(error, convo) {
 		FFYYCBot.startConversation(convo);
 	});
