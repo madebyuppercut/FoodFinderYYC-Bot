@@ -39,8 +39,11 @@
 		"convoKey": "place",
 		"convoId": 3300
 	},
-	"results": "Here are the closest locations to %s %s:\n\n",
-	"goodbye": "Thank you for using Food Finder YYC! Remember to add us to your contact info for future reference.",
-	"noResults": "We didn't find any available locations. Please try again later or call 211 for a referral to local meal programs.",
+	"closing": {
+		"results": "Here are the closest locations to %s %s:\n\n",
+		"noResults": "We didn't find any available locations. Please try again later or call 211 for a referral to local meal programs.",
+		"goodbye": "Thank you for using Food Finder YYC! Remember to add us to your contact info for future reference.",
+		"convoId": 9000
+	},
 	"timeout": "This conversation has timed out."
 }

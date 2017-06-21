@@ -26,10 +26,23 @@ controller.hears(FFYYCBot.hears, "message_received", function(bot, message) {
 
 
 // ==========================================================================
-//	 TESTS
+//	 Server routes
 // ==========================================================================
-
 var app = controller.webserver;
+
+// Statistics
+app.get("/stats", function(req, res) {
+	var FFYYCStats = require("./ffyyc_stats.js");
+	var stats = FFYYCStats.getStats(function(results, error) {
+		if (results != null && results != undefined) {
+			res.send(results);
+		} else {
+			res.send(error + "\n");
+		}
+	});
+});
+
+// Tests
 app.post("/test_convo", function(req, res) {
 	var data = req.body;
 	var TestConvo = require("./test_convo.js");

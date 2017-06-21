@@ -15,6 +15,9 @@
 var Console = require("console").Console;
 var fs = require("fs");
 
+TestConvo.PHONE_NUMBER = "+15550005555";
+
+
 function* _nextUserResponse(userInput) {
 	var i = 0;
 	while (i < userInput.length) {
@@ -46,7 +49,7 @@ function TestConvo(userInput, logFile) {
 	this.userResponse = _nextUserResponse(this.userInput);
 	this.responses = {};
 	this.source_message = {};
-	this.source_message.user = "+15555555555";
+	this.source_message.user = TestConvo.PHONE_NUMBER;
 
 	var loggerOutput = fs.createWriteStream("./tests/" + logFile);
 	this.logger = new Console(loggerOutput);

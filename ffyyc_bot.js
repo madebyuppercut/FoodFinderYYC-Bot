@@ -56,12 +56,16 @@
 
 	function _addUserEntry(user, convoId, response, validResponse) {
 		if (user != null) {
+			var now = new Date();
+			var elapsedSeconds = (now.getTime() - user.startTime.getTime()) / 1000;
+
 			var UserEntry = Parse.Object.extend("UserEntry");
 			var entry = new UserEntry();
 			entry.set("phoneNumber", user.phoneNumber);
 			entry.set("session", user.sessionNumber);
 			entry.set("convoId", convoId);
 			entry.set("response", response);
+			entry.set("time", elapsedSeconds);
 			entry.set("validResponse", validResponse);
 			entry.save(null, {
 				success: function(obj) {
@@ -75,9 +79,10 @@
 		}
 	}
 
-	function _sayResults(convoData, convo, gc) {
+	function _sayResults(user, convoData, convo, gc) {
 		_search(convoData, convo, gc, function(locations) {
 			var text;
+			var closing = convoData.closing;
 			if (locations != null && locations.length > 0) {
 				var day = convo.extractResponse(convoData.askDay.convoKey);
 				if (day == "1") {
@@ -98,7 +103,7 @@
 					location = convo.extractResponse(convoData.askPlace.convoKey);
 				}
 
-				text = util.format(convoData.results, location, day);
+				text = util.format(closing.results, location, day);
 
 				locations.forEach(function(loc) {
 					text += loc.name;
@@ -107,10 +112,12 @@
 					text += "\n\n";
 				});
 			} else {
-				text = convoData.noResults;
+				text = closing.noResults;
 			}
 
-			convo.say(text + convoData.goodbye);
+			_addUserEntry(user, closing.convoId);
+
+			convo.say(text + closing.goodbye);
 			convo.next();
 		});
 	}
@@ -126,7 +133,7 @@
 
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
-					_sayResults(convoData, convo, gc);
+					_sayResults(user, convoData, convo, gc);
 				} else {
 					var errorMessage = util.format(askAddress.errorFormat, response.text);
 					_askLocationType(user, convoData, convo, errorMessage);
@@ -155,7 +162,7 @@
 				var intersectionAddress = street1 + " & " + street2;
 				Geocoding.geocodeLocality(intersectionAddress, "Calgary", function(err, gc) {
 					if (!err) {
-						_sayResults(convoData, convo, gc);
+						_sayResults(user, convoData, convo, gc);
 					} else {
 						var errorMessage = util.format(askIntersection2.errorFormat, street1, street2);
 						_askLocationType(user, convoData, convo, errorMessage);
@@ -182,7 +189,7 @@
 			if (placeKey != null) {
 				var geocode = geocodings[placeKey];
 				if (geocode != null && geocode != undefined) {
-					_sayResults(convoData, convo, geocode);
+					_sayResults(user, convoData, convo, geocode);
 				} else {
 					console.log("!! No geocode for place: " + place);
 					var errorMessage = util.format(askPlace.errorFormat, response.text);
@@ -226,18 +233,16 @@
 		}, {key: askLocationType.convoKey});
 	}
 
+	/**
+	 * Starts the conversation with the Bot's greeting and first question. If the user parameter is non-null,
+	 * it will be used to track user responses in the database.
+	 */
 	function _startWithUser(user, convoData, convo) {
 		var greeting = convoData.greeting;
 		var askDay = convoData.askDay;
 		var fullGreeting = greeting + askDay.text;
 
 		convo.ask(fullGreeting, function(response, convo) {
-			convo.setTimeout(_timeoutMilliseconds);
-			convo.onTimeout(function(convo) {
-				convo.say(convoData.timeout);
-				convo.stop();
-			});
-
 			if (askDay.validResponses.includes(response.text.toLowerCase())) {
 				_addUserEntry(user, askDay.convoId, response.text, true);
 				_askLocationType(user, convoData, convo, "");
@@ -249,15 +254,21 @@
 	}
 
 	/**
-	 * Initiates a conversation instance with the Bot where it greets the user
-	 * and asks the first question.
+	 * Initiates the conversation between the user and Bot with the given convo object received from Botkit.
 	 */
 	function _startConversation(convo) {
+		convo.setTimeout(_timeoutMilliseconds);
+		convo.onTimeout(function(convo) {
+			convo.say(convoData.timeout);
+			convo.stop();
+		});
+
 		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
 		Parse.serverURL = process.env.PARSE_SERVERURL;
 
 		var user = {};
 		user.phoneNumber = convo.source_message.user;
+		user.startTime = new Date();
 
 		var UserEntry = Parse.Object.extend("UserEntry");
 		var query = new Parse.Query(UserEntry);
@@ -269,7 +280,7 @@
 					var latest = results[0];
 					user.sessionNumber = latest.get("session") + 1;
 				} else {
-					user.sessionNumber = 0;
+					user.sessionNumber = 1;
 				}
 				_startWithUser(user, convoData, convo);
 			},
