@@ -54,6 +54,27 @@
 		});
 	}
 
+	function _addUserEntry(user, convoId, response, validResponse) {
+		if (user != null) {
+			var UserEntry = Parse.Object.extend("UserEntry");
+			var entry = new UserEntry();
+			entry.set("phoneNumber", user.phoneNumber);
+			entry.set("session", user.sessionNumber);
+			entry.set("convoId", convoId);
+			entry.set("response", response);
+			entry.set("validResponse", validResponse);
+			entry.save(null, {
+				success: function(obj) {
+
+				},
+				error: function(error) {
+					console.error("Failed to save UserEntry:");
+					console.error(error);
+				}
+			});
+		}
+	}
+
 	function _sayResults(convoData, convo, gc) {
 		_search(convoData, convo, gc, function(locations) {
 			var text;
@@ -98,15 +119,17 @@
 	 * The Bot asks the user for their current address in order to determine their current
 	 * location, and if geocoded successfully, presents the user with the results.
 	 */
-	function _askAddress(convoData, convo) {
+	function _askAddress(user, convoData, convo) {
 		var askAddress = convoData.askAddress;
 		convo.ask(askAddress.text, function(response, convo) {
+			_addUserEntry(user, askAddress.convoId, response.text);
+
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
 					_sayResults(convoData, convo, gc);
 				} else {
 					var errorMessage = util.format(askAddress.errorFormat, response.text);
-					_askLocationType(convoData, convo, errorMessage);
+					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
 				}
 			});
@@ -118,12 +141,16 @@
 	 * The Bot asks the user what intersection they are at in order to determine their
 	 * current location, and if geocoded successfully, presents the user with the results.
 	 */
-	function _askIntersection(convoData, convo) {
+	function _askIntersection(user, convoData, convo) {
 		var askIntersection1 = convoData.askIntersection1;
 		convo.ask(askIntersection1.text, function(response, convo) {
+			_addUserEntry(user, askIntersection1.convoId, response.text);
+
 			var street1 = response.text;
 			var askIntersection2 = convoData.askIntersection2;
 			convo.ask(askIntersection2.text, function(response, convo) {
+				_addUserEntry(user, askIntersection2.convoId, response.text);
+
 				var street2 = response.text;
 				var intersectionAddress = street1 + " & " + street2;
 				Geocoding.geocodeLocality(intersectionAddress, "Calgary", function(err, gc) {
@@ -131,7 +158,7 @@
 						_sayResults(convoData, convo, gc);
 					} else {
 						var errorMessage = util.format(askIntersection2.errorFormat, street1, street2);
-						_askLocationType(convoData, convo, errorMessage);
+						_askLocationType(user, convoData, convo, errorMessage);
 						convo.next();
 					}
 				});
@@ -145,9 +172,11 @@
 	 * The Bot asks the user what place they are close to in order to determine their
 	 * current location, and if the place is found, presents the user with the results.
 	 */
-	function _askPlace(convoData, convo) {
+	function _askPlace(user, convoData, convo) {
 		var askPlace = convoData.askPlace;
 		convo.ask(askPlace.text, function(response, convo) {
+			_addUserEntry(user, askPlace.convoId, response.text);
+
 			var place = response.text.toLowerCase();
 			var placeKey = places[place];
 			if (placeKey != null) {
@@ -157,12 +186,12 @@
 				} else {
 					console.log("!! No geocode for place: " + place);
 					var errorMessage = util.format(askPlace.errorFormat, response.text);
-					_askLocationType(convoData, convo, errorMessage);
+					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
 				}
 			} else {
 				var errorMessage = util.format(askPlace.errorFormat, response.text);
-				_askLocationType(convoData, convo, errorMessage);
+				_askLocationType(user, convoData, convo, errorMessage);
 				convo.next();
 			}
 			return true; // NOTE(christian): For test purposes only. See remarks in test_convo.js.
@@ -176,37 +205,23 @@
 		var askLocationType = convoData.askLocationType;
 		var askText = prefix + askLocationType.text;
 		convo.ask(askText, function(response, convo) {
-			if (user != null) {
-				var ConvoStep = Parse.Object.extend("ConvoStep");
-				var step = new ConvoStep();
-				step.set("phoneNumber", user.phoneNumber);
-				step.set("session", user.sessionNumber);
-				step.set("stepId", askLocationType.stepId);
-				step.set("response", response.text);
-				step.save(null, {
-					success: function(obj) {
-
-					},
-					error: function(error) {
-						console.error("Failed to save convo step:");
-						console.error(error);
-					}
-				});
-			}
-
 			if (askLocationType.validResponses.includes(response.text.toLowerCase())) {
+				_addUserEntry(user, askLocationType.convoId, response.text, true);
+
 				var locationType = response.text.toLowerCase();
 				if (locationType == "1" || locationType == "address") {
-					_askAddress(convoData, convo);
+					_askAddress(user, convoData, convo);
 				} else if (locationType == "2" || locationType == "intersection") {
-					_askIntersection(convoData, convo);
+					_askIntersection(user, convoData, convo);
 				} else if (locationType == "3" || locationType == "school") {
-					_askPlace(convoData, convo);
+					_askPlace(user, convoData, convo);
 				} else {
 					console.log("!! Unknown location type as valid response!");
 				}
 
 				convo.next();
+			} else {
+				_addUserEntry(user, askLocationType.convoId, response.text, false);
 			}
 		}, {key: askLocationType.convoKey});
 	}
@@ -223,27 +238,12 @@
 				convo.stop();
 			});
 
-			if (user != null) {
-				var ConvoStep = Parse.Object.extend("ConvoStep");
-				var step = new ConvoStep();
-				step.set("phoneNumber", user.phoneNumber);
-				step.set("session", user.sessionNumber);
-				step.set("stepId", askDay.stepId);
-				step.set("response", response.text);
-				step.save(null, {
-					success: function(obj) {
-
-					},
-					error: function(error) {
-						console.error("Failed to save convo step:");
-						console.error(error);
-					}
-				});
-			}
-
 			if (askDay.validResponses.includes(response.text.toLowerCase())) {
-				_askLocationType(convoData, convo, "");
+				_addUserEntry(user, askDay.convoId, response.text, true);
+				_askLocationType(user, convoData, convo, "");
 				convo.next();
+			} else {
+				_addUserEntry(user, askDay.convoId, response.text, false);
 			}
 		}, {key: askDay.convoKey});
 	}
@@ -259,8 +259,8 @@
 		var user = {};
 		user.phoneNumber = convo.source_message.user;
 
-		var ConvoStep = Parse.Object.extend("ConvoStep");
-		var query = new Parse.Query(ConvoStep);
+		var UserEntry = Parse.Object.extend("UserEntry");
+		var query = new Parse.Query(UserEntry);
 		query.equalTo("phoneNumber", user.phoneNumber);
 		query.descending("session");
 		query.find({
@@ -274,7 +274,7 @@
 				_startWithUser(user, convoData, convo);
 			},
 			error: function(error) {
-				console.error("Error querying ConvoStep for user: " + user.phoneNumber);
+				console.error("Error querying UserEntry for user: " + user.phoneNumber);
 				console.error(error);
 				_startWithUser(null, convoData, convo);
 			}
