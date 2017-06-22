@@ -54,25 +54,33 @@
 		});
 	}
 
-	function _addUserEntry(user, convoId, response, validResponse) {
+	/**
+	 * Logs a conversation event to the database with the given ID, user response, and flag whether the user response
+	 * was valid. The events logged to the database can be used to gather statistics on the Bot and how users interact with it.
+	 * @param user The user object used to identify the event. If null, the event is not logged to the database.
+	 * @param convoId The ID of the conversation where this event originated from. This value should not be null.
+	 * @param response Optional. The user's reponse to the Bot's question.
+	 * @param validResponse Optional. Whether the user's response was valid or not.
+	 */
+	function _addConvoEvent(user, convoId, response, validResponse) {
 		if (user != null) {
 			var now = new Date();
 			var elapsedSeconds = (now.getTime() - user.startTime.getTime()) / 1000;
 
-			var UserEntry = Parse.Object.extend("UserEntry");
-			var entry = new UserEntry();
-			entry.set("phoneNumber", user.phoneNumber);
-			entry.set("session", user.sessionNumber);
-			entry.set("convoId", convoId);
-			entry.set("response", response);
-			entry.set("time", elapsedSeconds);
-			entry.set("validResponse", validResponse);
-			entry.save(null, {
+			var ConvoEvent = Parse.Object.extend("ConvoEvent");
+			var event = new ConvoEvent();
+			event.set("user", user.phoneNumber);
+			event.set("userSession", user.sessionNumber);
+			event.set("convoId", convoId);
+			event.set("userResponse", response);
+			event.set("time", elapsedSeconds);
+			event.set("validResponse", validResponse);
+			event.save(null, {
 				success: function(obj) {
-
+					// No op
 				},
 				error: function(error) {
-					console.error("Failed to save UserEntry:");
+					console.error("Failed to save ConvoEvent:");
 					console.error(error);
 				}
 			});
@@ -115,7 +123,7 @@
 				text = closing.noResults;
 			}
 
-			_addUserEntry(user, closing.convoId);
+			_addConvoEvent(user, closing.convoId);
 
 			convo.say(text + closing.goodbye);
 			convo.next();
@@ -129,7 +137,7 @@
 	function _askAddress(user, convoData, convo) {
 		var askAddress = convoData.askAddress;
 		convo.ask(askAddress.text, function(response, convo) {
-			_addUserEntry(user, askAddress.convoId, response.text);
+			_addConvoEvent(user, askAddress.convoId, response.text);
 
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
@@ -151,12 +159,12 @@
 	function _askIntersection(user, convoData, convo) {
 		var askIntersection1 = convoData.askIntersection1;
 		convo.ask(askIntersection1.text, function(response, convo) {
-			_addUserEntry(user, askIntersection1.convoId, response.text);
+			_addConvoEvent(user, askIntersection1.convoId, response.text);
 
 			var street1 = response.text;
 			var askIntersection2 = convoData.askIntersection2;
 			convo.ask(askIntersection2.text, function(response, convo) {
-				_addUserEntry(user, askIntersection2.convoId, response.text);
+				_addConvoEvent(user, askIntersection2.convoId, response.text);
 
 				var street2 = response.text;
 				var intersectionAddress = street1 + " & " + street2;
@@ -182,7 +190,7 @@
 	function _askPlace(user, convoData, convo) {
 		var askPlace = convoData.askPlace;
 		convo.ask(askPlace.text, function(response, convo) {
-			_addUserEntry(user, askPlace.convoId, response.text);
+			_addConvoEvent(user, askPlace.convoId, response.text);
 
 			var place = response.text.toLowerCase();
 			var placeKey = places[place];
@@ -213,7 +221,7 @@
 		var askText = prefix + askLocationType.text;
 		convo.ask(askText, function(response, convo) {
 			if (askLocationType.validResponses.includes(response.text.toLowerCase())) {
-				_addUserEntry(user, askLocationType.convoId, response.text, true);
+				_addConvoEvent(user, askLocationType.convoId, response.text, true);
 
 				var locationType = response.text.toLowerCase();
 				if (locationType == "1" || locationType == "address") {
@@ -228,7 +236,7 @@
 
 				convo.next();
 			} else {
-				_addUserEntry(user, askLocationType.convoId, response.text, false);
+				_addConvoEvent(user, askLocationType.convoId, response.text, false);
 			}
 		}, {key: askLocationType.convoKey});
 	}
@@ -244,11 +252,11 @@
 
 		convo.ask(fullGreeting, function(response, convo) {
 			if (askDay.validResponses.includes(response.text.toLowerCase())) {
-				_addUserEntry(user, askDay.convoId, response.text, true);
+				_addConvoEvent(user, askDay.convoId, response.text, true);
 				_askLocationType(user, convoData, convo, "");
 				convo.next();
 			} else {
-				_addUserEntry(user, askDay.convoId, response.text, false);
+				_addConvoEvent(user, askDay.convoId, response.text, false);
 			}
 		}, {key: askDay.convoKey});
 	}
@@ -270,22 +278,21 @@
 		user.phoneNumber = convo.source_message.user;
 		user.startTime = new Date();
 
-		var UserEntry = Parse.Object.extend("UserEntry");
-		var query = new Parse.Query(UserEntry);
-		query.equalTo("phoneNumber", user.phoneNumber);
-		query.descending("session");
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
+		query.equalTo("user", user.phoneNumber);
+		query.descending("userSession");
 		query.find({
 			success: function(results) {
 				if (results.length > 0) {
 					var latest = results[0];
-					user.sessionNumber = latest.get("session") + 1;
+					user.sessionNumber = latest.get("userSession") + 1;
 				} else {
 					user.sessionNumber = 1;
 				}
 				_startWithUser(user, convoData, convo);
 			},
 			error: function(error) {
-				console.error("Error querying UserEntry for user: " + user.phoneNumber);
 				console.error(error);
 				_startWithUser(null, convoData, convo);
 			}

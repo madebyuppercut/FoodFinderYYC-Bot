@@ -30,7 +30,10 @@ controller.hears(FFYYCBot.hears, "message_received", function(bot, message) {
 // ==========================================================================
 var app = controller.webserver;
 
-// Statistics
+/**
+ * Post GET to this route to retrieve current statistics on the Bot and interactions with it.
+ * On completion, this route returns a JSON object of the statistics.
+ */
 app.get("/stats", function(req, res) {
 	var FFYYCStats = require("./ffyyc_stats.js");
 	var stats = FFYYCStats.getStats(function(results, error) {

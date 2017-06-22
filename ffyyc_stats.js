@@ -6,12 +6,16 @@
 		convoData = require("./data/ffyyc_bot.json");
 
 
+	/**
+	 * Calculates statistics on session times for all users. Only the total session time is used
+	 * (i.e. the time of the last convo event, which represents the total time taken for the session).
+	 */
   function _calculateSessionTimes(callback) {
     var sessionTimes = {};
     var closing = convoData.closing;
 
-    var UserEntry = Parse.Object.extend("UserEntry");
-		var query = new Parse.Query(UserEntry);
+    var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
     query.equalTo("convoId", closing.convoId);
     query.find({
       success: function(results) {
@@ -39,9 +43,12 @@
     });
   }
 
+	/**
+	 * Counts the number of invalid responses accross all users.
+	 */
 	function _countInvalidResponses(callback) {
-		var UserEntry = Parse.Object.extend("UserEntry");
-		var query = new Parse.Query(UserEntry);
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
 		query.equalTo("validResponse", false);
 		query.count({
 			success: function(count) {
@@ -56,20 +63,24 @@
 		});
 	}
 
+	/**
+	 * Counts the number of sessions for each user and returns a JSON object in the form:
+	 * {"user": sessionCount}
+	 */
 	function _countUserSessions(users, callback) {
     var userSessions = {};
     if (users.size > 0) {
   		let usersCompleted = 0;
   		for (let user of users) {
-  			var UserEntry = Parse.Object.extend("UserEntry");
-  			var userQuery = new Parse.Query(UserEntry);
-  			userQuery.equalTo("phoneNumber", user);
-  			userQuery.descending("session");
+  			var ConvoEvent = Parse.Object.extend("ConvoEvent");
+  			var userQuery = new Parse.Query(ConvoEvent);
+  			userQuery.equalTo("user", user);
+  			userQuery.descending("userSession");
   			userQuery.find({
   				success: function(results) {
   					if (results.length > 0) {
   						var latest = results[0];
-  						userSessions[user] = latest.get("session");
+  						userSessions[user] = latest.get("userSession");
   					} else {
   						userSessions[user] = 0;
   					}
@@ -103,11 +114,12 @@
 		var askIntersection2 = convoData.askIntersection2;
 		var askPlace = convoData.askPlace;
 
-    // NOTE(christian): Query used to get list of users (identified by their phone number).
-		var UserEntry = Parse.Object.extend("UserEntry");
-		var query = new Parse.Query(UserEntry);
-		query.notEqualTo("phoneNumber", TestConvo.PHONE_NUMBER);
-    query.equalTo("session", 1);
+    // NOTE(christian): Query used to get list of users (identified by their phone number). Only the first session and
+		// initial convo is needed to retrieve a list of all users.
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
+    query.equalTo("userSession", 1);
     query.equalTo("convoId", askDay.convoId);
 		query.find({
 			success: function(results) {
@@ -117,7 +129,7 @@
           var users = new Set();
   				for (var i = 0; i < results.length; i++) {
   					var entry = results[i];
-  					users.add(entry.get("phoneNumber"));
+  					users.add(entry.get("user"));
   				}
   				stats.userCount = users.size;
 
