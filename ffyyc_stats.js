@@ -16,6 +16,7 @@
 
     var ConvoEvent = Parse.Object.extend("ConvoEvent");
 		var query = new Parse.Query(ConvoEvent);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
     query.equalTo("convoId", closing.convoId);
     query.find({
       success: function(results) {
@@ -49,6 +50,7 @@
 	function _countInvalidResponses(callback) {
 		var ConvoEvent = Parse.Object.extend("ConvoEvent");
 		var query = new Parse.Query(ConvoEvent);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
 		query.equalTo("validResponse", false);
 		query.count({
 			success: function(count) {
