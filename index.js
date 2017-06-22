@@ -40,7 +40,12 @@ app.get("/stats", function(req, res) {
 		if (results != null && results != undefined) {
 			res.send(results);
 		} else {
-			res.send(error + "\n");
+			var errorMessage = error.length + " error(s):\n";
+			for (var err of error) {
+				errorMessage += err.message;
+				errorMessage += "\n";
+			}
+			res.send(errorMessage);
 		}
 	});
 });
