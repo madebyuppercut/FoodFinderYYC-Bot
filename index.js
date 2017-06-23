@@ -32,7 +32,7 @@ var app = controller.webserver;
 
 /**
  * Post GET to this route to retrieve current statistics on the Bot and interactions with it.
- * On completion, this route returns a JSON object of the statistics.
+ * On completion, this route returns a JSON object of the gathered statistics.
  */
 app.get("/stats", function(req, res) {
 	var FFYYCStats = require("./ffyyc_stats.js");
@@ -50,7 +50,13 @@ app.get("/stats", function(req, res) {
 	});
 });
 
-// Tests
+/**
+ * Send a POST request to this endpoint to test a conversation. The request body should be a JSON
+ * object of the form:
+ * {"convo": [...], "testFile": "..."}
+ * where the "convo" value is an array of user responses to each step in the converation flow,
+ * and the "testFile" value is the name of the output file to record the conversation.
+ */
 app.post("/test_convo", function(req, res) {
 	var data = req.body;
 	var TestConvo = require("./test_convo.js");

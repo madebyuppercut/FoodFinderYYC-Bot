@@ -87,12 +87,13 @@
 		intersectionQuery.equalTo("convoId", askIntersection1.convoId);
 		var schoolQuery = new Parse.Query(ConvoEvent);
 		schoolQuery.equalTo("convoId", askPlace.convoId);
+
 		var query = new Parse.Query.or(addressQuery, intersectionQuery, schoolQuery);
 		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
 		query.find({
 			success: function(results) {
 				var addressChoices = 0;
-				var intersetionChoices = 0;
+				var intersectionChoices = 0;
 				var placeChoices = 0;
 
 				for (var i = 0; i < results.length; i++) {
@@ -100,14 +101,14 @@
 					if (entry.get("convoId") == askAddress.convoId) {
 						addressChoices++;
 					} else if (entry.get("convoId") == askIntersection1.convoId) {
-						intersetionChoices++;
+						intersectionChoices++;
 					} else if (entry.get("convoId") == askPlace.convoId) {
 						placeChoices++;
 					}
 				}
 
 				locationChoices.addresses = addressChoices;
-				locationChoices.intersections = intersetionChoices;
+				locationChoices.intersections = intersectionChoices;
 				locationChoices.places = placeChoices;
 				callback(locationChoices, null);
 			},
@@ -215,15 +216,13 @@
 	}
 
 	/**
-	 * Calculates statistics on the activity of the Bot and returns a JSON object in the given callback.
+	 * Calculates user-specific statistics, and returns the total user count and a sessions JSON object in the callback
+	 * (see remarks for _calculateSessionStats).
 	 */
-	function _getStats(callback) {
-		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
-		Parse.serverURL = process.env.PARSE_SERVERURL;
+	function _getUserStats(callback) {
+		var askDay = convoData.askDay;
 
-    var askDay = convoData.askDay;
-
-    // NOTE(christian): Query used to get list of users (identified by their phone number). Only the first session and
+		// NOTE(christian): Query used to get list of users (identified by their phone number). Only the first session and
 		// initial convo is needed to retrieve a list of all users.
 		var ConvoEvent = Parse.Object.extend("ConvoEvent");
 		var query = new Parse.Query(ConvoEvent);
@@ -232,64 +231,72 @@
     query.equalTo("convoId", askDay.convoId);
 		query.find({
 			success: function(results) {
-				var stats = {};
+        var users = new Set();
+				for (var i = 0; i < results.length; i++) {
+					var entry = results[i];
+					users.add(entry.get("user"));
+				}
 
-        if (results.length > 0) {
-          var users = new Set();
-  				for (var i = 0; i < results.length; i++) {
-  					var entry = results[i];
-  					users.add(entry.get("user"));
-  				}
-  				stats.userCount = users.size;
-
-  				let tasksCompleted = 0;
-  				let totalTasks = 5;
-          var errors = [];
-
-          function completeIfAllTasksDone(err) {
-            if (err != null && err != undefined) {
-              errors.push(err);
-            }
-
-            tasksCompleted++;
-            if (tasksCompleted == totalTasks) {
-              callback(stats, (errors.length == 0 ? null : errors));
-            }
-          }
-
-  				_countInvalidResponses(function(count, error) {
-  					stats.invalidResponses = count;
-            completeIfAllTasksDone(error);
-  				});
-
-					_countLocationChoices(function(locationChoices, error) {
-						stats.locationChoices = locationChoices;
-						completeIfAllTasksDone(error);
-					});
-
-					_countLocationsNotFound(function(notFound, error) {
-						stats.notFound = notFound;
-						completeIfAllTasksDone(error);
-					});
-
-  				_calculateSessionStats(users, function(sessions, error) {
-  					stats.sessions = sessions;
-  					completeIfAllTasksDone(error);
-  				});
-
-          _calculateSessionTimes(function(sessionTimes, error) {
-            stats.sessionTimes = sessionTimes;
-            completeIfAllTasksDone(error);
-          });
-        } else {
-          callback(stats, null);
-        }
+				_calculateSessionStats(users, function(sessions, error) {
+					callback(users.size, sessions, error);
+				});
 			},
 			error: function(error) {
 				console.error(error);
-				callback(null, [error]);
+				callback(0, null, error);
 			}
 		});
+	}
+
+	/**
+	 * Calculates statistics on the activity of the Bot and returns a JSON object in the given callback.
+	 */
+	function _getStats(callback) {
+		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
+		Parse.serverURL = process.env.PARSE_SERVERURL;
+
+		var stats = {};
+
+		let tasksCompleted = 0;
+		let totalTasks = 5;
+		var errors = [];
+
+		function completeIfAllTasksDone(err) {
+			if (err != null && err != undefined) {
+				errors.push(err);
+			}
+
+			tasksCompleted++;
+			if (tasksCompleted == totalTasks) {
+				callback(stats, (errors.length == 0 ? null : errors));
+			}
+		}
+
+		_getUserStats(function(userCount, sessions, error) {
+			stats.userCount = userCount;
+			stats.sessions = sessions;
+			completeIfAllTasksDone(error);
+		});
+
+		_countInvalidResponses(function(count, error) {
+			stats.invalidResponses = count;
+      completeIfAllTasksDone(error);
+		});
+
+		_countLocationChoices(function(locationChoices, error) {
+			stats.locationChoices = locationChoices;
+			completeIfAllTasksDone(error);
+		});
+
+		_countLocationsNotFound(function(notFound, error) {
+			stats.notFound = notFound;
+			completeIfAllTasksDone(error);
+		});
+
+    _calculateSessionTimes(function(sessionTimes, error) {
+      stats.sessionTimes = sessionTimes;
+      completeIfAllTasksDone(error);
+    });
 	}
 
 	module.exports = {

@@ -6,11 +6,9 @@
 #	run_test [-local|-dev|-prod] params
 #	run_test [-local|-dev|-prod] -file file
 #
-# where 'params' is a JSON object containing the user's input for each step of the
-# conversation as key-value pairs. The list of possible keys are:
-#	greeting, city, address, location
+# where 'params' is an array containing the user's input for each step of the conversation.
 #
-# 	e.g. run_test -local "{\"greeting\":\"Hello\", \"city\":\"Calgary\", ...}"
+# 	e.g. run_test -local "[\"Hello\", \"today\", ...]"
 #
 # and 'file' is a JSON file in the same format as 'params'.
 #
@@ -50,7 +48,6 @@ if [ "$POST_URL" != "" ] && [ "$PARAMS" != "" ]; then
 	PARAMS="{\"convo\": $PARAMS, \"testFile\": \"$TEST_FILENAME\"}"
 
 	curl -X POST -H "Content-Type: application/json" -d "${PARAMS}" $POST_URL
-	#open -e "./tests/$TEST_FILENAME"
 else
 	echo "Missing parameters..."
 	echo
