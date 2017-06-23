@@ -24,7 +24,7 @@
 		var searchDate = new Date();
 
 		var day = convo.extractResponse(askDay.convoKey);
-		if (day == "2" || day == "tomorrow") {
+		if (day == "2" || day == "\"2\"" || day == "tomorrow") {
 			searchDate.setDate(searchDate.getDate() + 1);
 		}
 
@@ -100,21 +100,21 @@
 			var closing = convoData.closing;
 			if (locations != null && locations.length > 0) {
 				var day = convo.extractResponse(convoData.askDay.convoKey);
-				if (day == "1") {
+				if (day == "1" || day == "\"1\"") {
 					day = "today";
-				} else if (day == "2") {
+				} else if (day == "2" || day == "\"2\"") {
 					day = "tomorrow";
 				}
 
 				var location;
 				var locationType = convo.extractResponse(convoData.askLocationType.convoKey);
-				if (locationType == "1" || locationType == "address") {
+				if (locationType == "1" || locationType == "\"1\"" || locationType == "address") {
 					location = convo.extractResponse(convoData.askAddress.convoKey);
-				} else if (locationType == "2" || locationType == "intersection") {
+				} else if (locationType == "2" || locationType == "\"2\"" || locationType == "intersection") {
 					var street1 = convo.extractResponse(convoData.askIntersection1.convoKey);
 					var street2 = convo.extractResponse(convoData.askIntersection2.convoKey);
 					location = street1 + " and " + street2;
-				} else if (locationType == "3" || locationType == "school") {
+				} else if (locationType == "3" || locationType == "\"3\"" || locationType == "school") {
 					location = convo.extractResponse(convoData.askPlace.convoKey);
 				}
 
@@ -232,11 +232,11 @@
 				_addConvoEvent(user, askLocationType.convoId, {response: response.text, validResponse: true});
 
 				var locationType = response.text.toLowerCase();
-				if (locationType == "1" || locationType == "address") {
+				if (locationType == "1" || locationType == "\"1\"" || locationType == "address") {
 					_askAddress(user, convoData, convo);
-				} else if (locationType == "2" || locationType == "intersection") {
+				} else if (locationType == "2" || locationType == "\"2\"" || locationType == "intersection") {
 					_askIntersection(user, convoData, convo);
-				} else if (locationType == "3" || locationType == "school") {
+				} else if (locationType == "3" || locationType == "\"3\"" || locationType == "school") {
 					_askPlace(user, convoData, convo);
 				} else {
 					console.log("!! Unknown location type as valid response!");
