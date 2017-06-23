@@ -1,13 +1,13 @@
 {
 	"greeting": "Hello! Welcome to Food Finder YYC 🍎. I can help you find food resources in Calgary.\n\n",
 	"askDay": {
-		"text": "🕛 Are you looking for today or tomorrow?\nReply \"1\" for Today\nReply \"2\" for Tomorrow",
+		"text": "🕛 Are you looking for today or tomorrow?\n\nReply \"1\" for Today\nReply \"2\" for Tomorrow",
 		"validResponses": ["1", "2", "today", "tomorrow"],
 		"convoKey": "day",
 		"convoId": 1000
 	},
 	"askLocationType": {
-		"text": "📍 I need to figure out where you are so I can give you the closest locations. How would you like to tell me?\n\"1\" Address\n\"2\" Intersection\n\"3\" Closest Public or Catholic School",
+		"text": "📍 I need to figure out where you are so I can give you the closest locations. How would you like to tell me?\n\n\"1\" Address\n\"2\" Intersection\n\"3\" Closest Public or Catholic School",
 		"validResponses": ["1", "2", "3", "address", "intersection", "school"],
 		"convoKey": "locationType",
 		"convoId": 2000
