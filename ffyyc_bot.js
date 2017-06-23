@@ -59,10 +59,13 @@
 	 * was valid. The events logged to the database can be used to gather statistics on the Bot and how users interact with it.
 	 * @param user The user object used to identify the event. If null, the event is not logged to the database.
 	 * @param convoId The ID of the conversation where this event originated from. This value should not be null.
-	 * @param response Optional. The user's reponse to the Bot's question.
-	 * @param validResponse Optional. Whether the user's response was valid or not.
+	 * @param params (Optional) A JSON object that identifies custom parameters for the convo event. Supported keys
+	 *	and corresponding value types are:
+	 *	- response (string): the user's response text
+	 *	- validReponse (boolean): whether the user's response was valid
+	 *	- locationsFound (boolean): whether locations were found for the search given the location type and user's input
 	 */
-	function _addConvoEvent(user, convoId, response, validResponse) {
+	function _addConvoEvent(user, convoId, params) {
 		if (user != null) {
 			var now = new Date();
 			var elapsedSeconds = (now.getTime() - user.startTime.getTime()) / 1000;
@@ -72,9 +75,13 @@
 			event.set("user", user.phoneNumber);
 			event.set("userSession", user.sessionNumber);
 			event.set("convoId", convoId);
-			event.set("userResponse", response);
 			event.set("time", elapsedSeconds);
-			event.set("validResponse", validResponse);
+			if (params != null && params != undefined) {
+				event.set("userResponse", params.response);
+				event.set("validResponse", params.validResponse);
+				event.set("locationsFound", params.locationsFound);
+			}
+
 			event.save(null, {
 				success: function(obj) {
 					// No op
@@ -137,12 +144,12 @@
 	function _askAddress(user, convoData, convo) {
 		var askAddress = convoData.askAddress;
 		convo.ask(askAddress.text, function(response, convo) {
-			_addConvoEvent(user, askAddress.convoId, response.text);
-
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
+					_addConvoEvent(user, askAddress.convoId, {response: response.text, locationsFound: true});
 					_sayResults(user, convoData, convo, gc);
 				} else {
+					_addConvoEvent(user, askAddress.convoId, {response: response.text, locationsFound: false});
 					var errorMessage = util.format(askAddress.errorFormat, response.text);
 					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
@@ -159,19 +166,19 @@
 	function _askIntersection(user, convoData, convo) {
 		var askIntersection1 = convoData.askIntersection1;
 		convo.ask(askIntersection1.text, function(response, convo) {
-			_addConvoEvent(user, askIntersection1.convoId, response.text);
+			_addConvoEvent(user, askIntersection1.convoId, {response: response.text});
 
 			var street1 = response.text;
 			var askIntersection2 = convoData.askIntersection2;
 			convo.ask(askIntersection2.text, function(response, convo) {
-				_addConvoEvent(user, askIntersection2.convoId, response.text);
-
 				var street2 = response.text;
 				var intersectionAddress = street1 + " & " + street2;
 				Geocoding.geocodeLocality(intersectionAddress, "Calgary", function(err, gc) {
 					if (!err) {
+						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, locationsFound: true});
 						_sayResults(user, convoData, convo, gc);
 					} else {
+						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, locationsFound: false});
 						var errorMessage = util.format(askIntersection2.errorFormat, street1, street2);
 						_askLocationType(user, convoData, convo, errorMessage);
 						convo.next();
@@ -190,21 +197,22 @@
 	function _askPlace(user, convoData, convo) {
 		var askPlace = convoData.askPlace;
 		convo.ask(askPlace.text, function(response, convo) {
-			_addConvoEvent(user, askPlace.convoId, response.text);
-
 			var place = response.text.toLowerCase();
 			var placeKey = places[place];
 			if (placeKey != null) {
 				var geocode = geocodings[placeKey];
 				if (geocode != null && geocode != undefined) {
+					_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: true});
 					_sayResults(user, convoData, convo, geocode);
 				} else {
 					console.log("!! No geocode for place: " + place);
+					_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: false});
 					var errorMessage = util.format(askPlace.errorFormat, response.text);
 					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
 				}
 			} else {
+				_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: false});
 				var errorMessage = util.format(askPlace.errorFormat, response.text);
 				_askLocationType(user, convoData, convo, errorMessage);
 				convo.next();
@@ -221,7 +229,7 @@
 		var askText = prefix + askLocationType.text;
 		convo.ask(askText, function(response, convo) {
 			if (askLocationType.validResponses.includes(response.text.toLowerCase())) {
-				_addConvoEvent(user, askLocationType.convoId, response.text, true);
+				_addConvoEvent(user, askLocationType.convoId, {response: response.text, validResponse: true});
 
 				var locationType = response.text.toLowerCase();
 				if (locationType == "1" || locationType == "address") {
@@ -236,7 +244,7 @@
 
 				convo.next();
 			} else {
-				_addConvoEvent(user, askLocationType.convoId, response.text, false);
+				_addConvoEvent(user, askLocationType.convoId, {response: response.text, validResponse: false});
 			}
 		}, {key: askLocationType.convoKey});
 	}
@@ -252,11 +260,11 @@
 
 		convo.ask(fullGreeting, function(response, convo) {
 			if (askDay.validResponses.includes(response.text.toLowerCase())) {
-				_addConvoEvent(user, askDay.convoId, response.text, true);
+				_addConvoEvent(user, askDay.convoId, {response: response.text, validResponse: true});
 				_askLocationType(user, convoData, convo, "");
 				convo.next();
 			} else {
-				_addConvoEvent(user, askDay.convoId, response.text, false);
+				_addConvoEvent(user, askDay.convoId, {response: response.text, validResponse: false});
 			}
 		}, {key: askDay.convoKey});
 	}

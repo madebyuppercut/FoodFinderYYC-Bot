@@ -71,6 +71,98 @@
 	}
 
 	/**
+	 * Counts the number of choices made by users for each type of location, and returns a JSON object in the form:
+	 * {"addresses": xxx, "intersections": xxx, "places": xxx}
+	 */
+	function _countLocationChoices(callback) {
+		var askAddress = convoData.askAddress;
+		var askIntersection1 = convoData.askIntersection1;
+		var askPlace = convoData.askPlace;
+		var locationChoices = {};
+
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var addressQuery = new Parse.Query(ConvoEvent);
+		addressQuery.equalTo("convoId", askAddress.convoId);
+		var intersectionQuery = new Parse.Query(ConvoEvent);
+		intersectionQuery.equalTo("convoId", askIntersection1.convoId);
+		var schoolQuery = new Parse.Query(ConvoEvent);
+		schoolQuery.equalTo("convoId", askPlace.convoId);
+		var query = new Parse.Query.or(addressQuery, intersectionQuery, schoolQuery);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
+		query.find({
+			success: function(results) {
+				var addressChoices = 0;
+				var intersetionChoices = 0;
+				var placeChoices = 0;
+
+				for (var i = 0; i < results.length; i++) {
+					var entry = results[i];
+					if (entry.get("convoId") == askAddress.convoId) {
+						addressChoices++;
+					} else if (entry.get("convoId") == askIntersection1.convoId) {
+						intersetionChoices++;
+					} else if (entry.get("convoId") == askPlace.convoId) {
+						placeChoices++;
+					}
+				}
+
+				locationChoices.addresses = addressChoices;
+				locationChoices.intersections = intersetionChoices;
+				locationChoices.places = placeChoices;
+				callback(locationChoices, null);
+			},
+			error: function(error) {
+				console.error(error);
+				callback(null, error);
+			}
+		});
+	}
+
+	/**
+	 * Counts the number of events where no locations were found for user input, and returns a JSON object in the form:
+	 * {"addresses": xxx, "intersections": xxx, "places": xxx, "count": xxx}
+	 */
+	function _countLocationsNotFound(callback) {
+		var askAddress = convoData.askAddress;
+		var askIntersection1 = convoData.askIntersection1;
+		var askPlace = convoData.askPlace;
+		var notFound = {};
+
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
+		query.equalTo("locationsFound", false);
+		query.find({
+			success: function(results) {
+				var addressesNotFound = 0;
+				var intersectionsNotFound = 0;
+				var placesNotFound = 0;
+
+				for (var i = 0; i < results.length; i++) {
+					var entry = results[i];
+					if (entry.get("convoId") == askAddress.convoId) {
+						addressesNotFound++;
+					} else if (entry.get("convoId") == askIntersection1.convoId) {
+						intersectionsNotFound++;
+					} else if (entry.get("convoId") == askPlace.convoId) {
+						placesNotFound++;
+					}
+				}
+
+				notFound.addresses = addressesNotFound;
+				notFound.intersections = intersectionsNotFound;
+				notFound.places = placesNotFound;
+				notFound.count = results.length;
+				callback(notFound, null);
+			},
+			error: function(error) {
+				console.error(error);
+				callback(null, error);
+			}
+		});
+	}
+
+	/**
 	 * Calculates statistics on all sessions that have been logged to the database, and returns a JSON object of the form:
 	 * {"min": xxx, "max": xxx, "mean": xxx", "userSessions": {"user": xxx, ...}}
 	 */
@@ -130,10 +222,6 @@
 		Parse.serverURL = process.env.PARSE_SERVERURL;
 
     var askDay = convoData.askDay;
-		var askAddress = convoData.askAddress;
-		var askIntersection1 = convoData.askIntersection1;
-		var askIntersection2 = convoData.askIntersection2;
-		var askPlace = convoData.askPlace;
 
     // NOTE(christian): Query used to get list of users (identified by their phone number). Only the first session and
 		// initial convo is needed to retrieve a list of all users.
@@ -155,7 +243,7 @@
   				stats.userCount = users.size;
 
   				let tasksCompleted = 0;
-  				let totalTasks = 3;
+  				let totalTasks = 5;
           var errors = [];
 
           function completeIfAllTasksDone(err) {
@@ -173,6 +261,16 @@
   					stats.invalidResponses = count;
             completeIfAllTasksDone(error);
   				});
+
+					_countLocationChoices(function(locationChoices, error) {
+						stats.locationChoices = locationChoices;
+						completeIfAllTasksDone(error);
+					});
+
+					_countLocationsNotFound(function(notFound, error) {
+						stats.notFound = notFound;
+						completeIfAllTasksDone(error);
+					});
 
   				_calculateSessionStats(users, function(sessions, error) {
   					stats.sessions = sessions;
