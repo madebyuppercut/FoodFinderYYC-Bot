@@ -120,19 +120,19 @@
 	}
 
 	/**
-	 * Counts the number of events where no locations were found for user input, and returns a JSON object in the form:
+	 * Counts the number of events where no geocodes were found for some location input, and returns a JSON object in the form:
 	 * {"addresses": xxx, "intersections": xxx, "places": xxx, "count": xxx}
 	 */
-	function _countLocationsNotFound(callback) {
+	function _countGeocodesNotFound(callback) {
 		var askAddress = convoData.askAddress;
-		var askIntersection1 = convoData.askIntersection1;
+		var askIntersection2 = convoData.askIntersection2;
 		var askPlace = convoData.askPlace;
-		var notFound = {};
+		var noGeocodes = {};
 
 		var ConvoEvent = Parse.Object.extend("ConvoEvent");
 		var query = new Parse.Query(ConvoEvent);
 		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
-		query.equalTo("locationsFound", false);
+		query.equalTo("geocodeFound", false);
 		query.find({
 			success: function(results) {
 				var addressesNotFound = 0;
@@ -143,18 +143,55 @@
 					var entry = results[i];
 					if (entry.get("convoId") == askAddress.convoId) {
 						addressesNotFound++;
-					} else if (entry.get("convoId") == askIntersection1.convoId) {
+					} else if (entry.get("convoId") == askIntersection2.convoId) {
 						intersectionsNotFound++;
 					} else if (entry.get("convoId") == askPlace.convoId) {
 						placesNotFound++;
 					}
 				}
 
-				notFound.addresses = addressesNotFound;
-				notFound.intersections = intersectionsNotFound;
-				notFound.places = placesNotFound;
-				notFound.count = results.length;
-				callback(notFound, null);
+				noGeocodes.addresses = addressesNotFound;
+				noGeocodes.intersections = intersectionsNotFound;
+				noGeocodes.places = placesNotFound;
+				noGeocodes.count = results.length;
+				callback(noGeocodes, null);
+			},
+			error: function(error) {
+				console.error(error);
+				callback(null, error);
+			}
+		});
+	}
+
+	/**
+	 * Counts the number of instances where a location was not found given a location's geocode, and returns a JSON
+	 * object containing the total count and a list of search parameters where a location was not found:
+	 * {"count": xxx, "searchParams": [...]}
+	 */
+	function _countLocationsNotFound(callback) {
+		var closing = convoData.closing;
+		var noLocations = {};
+
+		var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		var query = new Parse.Query(ConvoEvent);
+		query.notEqualTo("user", TestConvo.PHONE_NUMBER);
+		query.equalTo("convoId", closing.convoId);
+		query.equalTo("locationsFound", false);
+		query.find({
+			success: function(results) {
+				var searchParams = [];
+
+				for (var i = 0; i < results.length; i++) {
+					var entry = results[i];
+					var param = {};
+					param.geocode = entry.get("geocode");
+					param.searchDate = entry.get("searchDate");
+					searchParams.push(param);
+				}
+
+				noLocations.count = results.length;
+				noLocations.searchParams = searchParams;
+				callback(noLocations, null);
 			},
 			error: function(error) {
 				console.error(error);
@@ -258,7 +295,7 @@
 		var stats = {};
 
 		let tasksCompleted = 0;
-		let totalTasks = 5;
+		let totalTasks = 6;
 		var errors = [];
 
 		function completeIfAllTasksDone(err) {
@@ -288,8 +325,13 @@
 			completeIfAllTasksDone(error);
 		});
 
-		_countLocationsNotFound(function(notFound, error) {
-			stats.notFound = notFound;
+		_countGeocodesNotFound(function(noGeocodes, error) {
+			stats.noGeocodes = noGeocodes;
+			completeIfAllTasksDone(error);
+		});
+
+		_countLocationsNotFound(function(noLocations, error) {
+			stats.noLocations = noLocations;
 			completeIfAllTasksDone(error);
 		});
 

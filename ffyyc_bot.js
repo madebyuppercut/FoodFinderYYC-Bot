@@ -45,10 +45,10 @@
 					var loc = locations[i];
 					locs.push({name: loc.object.get("name"), address: loc.object.get("address")});
 				}
-				completion(locs);
+				completion(locs, searchDate);
 			},
 			error: function(error) {
-				console.log("!! Error running 'search' on Parse: " + error);
+				console.error(error);
 				completion(null);
 			}
 		});
@@ -63,7 +63,8 @@
 	 *	and corresponding value types are:
 	 *	- response (string): the user's response text
 	 *	- validReponse (boolean): whether the user's response was valid
-	 *	- locationsFound (boolean): whether locations were found for the search given the location type and user's input
+	 *	- geocodeFound (boolean): whether a geocode was found/returned for a location entry
+	 *	- locationsFound (boolean): whether search results for a given geocode returned any locations
 	 */
 	function _addConvoEvent(user, convoId, params) {
 		if (user != null) {
@@ -79,7 +80,10 @@
 			if (params != null && params != undefined) {
 				event.set("userResponse", params.response);
 				event.set("validResponse", params.validResponse);
+				event.set("geocodeFound", params.geocodeFound);
 				event.set("locationsFound", params.locationsFound);
+				event.set("geocode", params.geocode);
+				event.set("searchDate", params.searchDate);
 			}
 
 			event.save(null, {
@@ -95,7 +99,7 @@
 	}
 
 	function _sayResults(user, convoData, convo, gc) {
-		_search(convoData, convo, gc, function(locations) {
+		_search(convoData, convo, gc, function(locations, searchDate) {
 			var text;
 			var closing = convoData.closing;
 			if (locations != null && locations.length > 0) {
@@ -130,7 +134,8 @@
 				text = closing.noResults;
 			}
 
-			_addConvoEvent(user, closing.convoId);
+			var dateString = searchDate.toString();
+			_addConvoEvent(user, closing.convoId, {locationsFound: locations.length > 0, geocode: gc, searchDate: dateString});
 
 			convo.say(text + closing.goodbye);
 			convo.next();
@@ -146,10 +151,10 @@
 		convo.ask(askAddress.text, function(response, convo) {
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
-					_addConvoEvent(user, askAddress.convoId, {response: response.text, locationsFound: true});
+					_addConvoEvent(user, askAddress.convoId, {response: response.text, geocodeFound: true});
 					_sayResults(user, convoData, convo, gc);
 				} else {
-					_addConvoEvent(user, askAddress.convoId, {response: response.text, locationsFound: false});
+					_addConvoEvent(user, askAddress.convoId, {response: response.text, geocodeFound: false});
 					var errorMessage = util.format(askAddress.errorFormat, response.text);
 					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
@@ -175,10 +180,10 @@
 				var intersectionAddress = street1 + " & " + street2;
 				Geocoding.geocodeLocality(intersectionAddress, "Calgary", function(err, gc) {
 					if (!err) {
-						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, locationsFound: true});
+						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, geocodeFound: true});
 						_sayResults(user, convoData, convo, gc);
 					} else {
-						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, locationsFound: false});
+						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, geocodeFound: false});
 						var errorMessage = util.format(askIntersection2.errorFormat, street1, street2);
 						_askLocationType(user, convoData, convo, errorMessage);
 						convo.next();
@@ -202,17 +207,17 @@
 			if (placeKey != null) {
 				var geocode = geocodings[placeKey];
 				if (geocode != null && geocode != undefined) {
-					_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: true});
+					_addConvoEvent(user, askPlace.convoId, {response: response.text, geocodeFound: true});
 					_sayResults(user, convoData, convo, geocode);
 				} else {
 					console.log("!! No geocode for place: " + place);
-					_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: false});
+					_addConvoEvent(user, askPlace.convoId, {response: response.text, geocodeFound: false});
 					var errorMessage = util.format(askPlace.errorFormat, response.text);
 					_askLocationType(user, convoData, convo, errorMessage);
 					convo.next();
 				}
 			} else {
-				_addConvoEvent(user, askPlace.convoId, {response: response.text, locationsFound: false});
+				_addConvoEvent(user, askPlace.convoId, {response: response.text, geocodeFound: false});
 				var errorMessage = util.format(askPlace.errorFormat, response.text);
 				_askLocationType(user, convoData, convo, errorMessage);
 				convo.next();
