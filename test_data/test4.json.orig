@@ -6,6 +6,10 @@
 	"address",
 	"123 Nowhere St.",
 	"7",
+<<<<<<< HEAD
+	"place",
+=======
 	"school",
+>>>>>>> dev
 	"Henry Wise Wood"
 ]

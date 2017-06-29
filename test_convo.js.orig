@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 /**
  * This module is used in conjunction with the 'run_test.sh' Bash script to test
  * conversations with the bot. Executing the Bash script with conversation data
@@ -10,14 +12,18 @@
  * output to a text file.
  */
 
+>>>>>>> dev
 "use strict";
 
 var Console = require("console").Console;
 var fs = require("fs");
 
+<<<<<<< HEAD
+=======
 TestConvo.PHONE_NUMBER = "+15555555555";
 
 
+>>>>>>> dev
 function* _nextUserResponse(userInput) {
 	var i = 0;
 	while (i < userInput.length) {
@@ -36,6 +42,8 @@ function _logNextUserResponse(co, userInput, logger) {
 	return null;
 }
 
+<<<<<<< HEAD
+=======
 function _recordResponse(responseText, responses, opt) {
 	if (opt) {
 		var key = opt.key;
@@ -43,52 +51,78 @@ function _recordResponse(responseText, responses, opt) {
 	}
 }
 
+>>>>>>> dev
 function TestConvo(userInput, logFile) {
 	this.userInput = userInput;
 	this.nextConvo = false;
 	this.userResponse = _nextUserResponse(this.userInput);
 	this.responses = {};
+<<<<<<< HEAD
+=======
 	this.source_message = {};
 	this.source_message.user = TestConvo.PHONE_NUMBER;
+>>>>>>> dev
 
 	var loggerOutput = fs.createWriteStream("./tests/" + logFile);
 	this.logger = new Console(loggerOutput);
 }
 
+<<<<<<< HEAD
+=======
 /**
  * Outputs the bot's response to the logger.
  */
+>>>>>>> dev
 TestConvo.prototype.say = function(text) {
 	this.logger.log("BOT: " + text);
 }
 
+<<<<<<< HEAD
+=======
 /**
  * Outputs the bot's question to the logger and reads the next user response
  * from the conversation data that is being tested and outputs it to the logger.
  * In order to simulate waiting on server response before continuing with the
  * conversation, the callback passed to this method can return a value of 'true'.
  */
+>>>>>>> dev
 TestConvo.prototype.ask = function(text, callback, opt) {
 	this.say(text);
 	this.nextConvo = false;
 	var response = _logNextUserResponse(this.userResponse, this.userInput, this.logger);
 	if (response) {
+<<<<<<< HEAD
+		if (opt) {
+			var key = opt.key;
+			this.responses[key] = response.text;
+		}
+		callback(response, this);
+=======
 		_recordResponse(response.text, this.responses, opt);
 		var wait = callback(response, this);
 		wait = (wait == undefined ? false : wait);
+>>>>>>> dev
 	} else {
 		this.logger.log("* 'ask' called with no user response *");
 		this.next();
 	}
 
+<<<<<<< HEAD
+	while (!this.nextConvo) {
+=======
 	while (!this.nextConvo && !wait) {
+>>>>>>> dev
 		response = _logNextUserResponse(this.userResponse, this.userInput, this.logger);
 		if (!response) {
 			break;
 		}
+<<<<<<< HEAD
+		callback(response, this);
+=======
 		_recordResponse(response.text, this.responses, opt);
 		var wait = callback(response, this);
 		wait = (wait == undefined ? false : wait);
+>>>>>>> dev
 	}
 }
 

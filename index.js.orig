@@ -8,7 +8,11 @@ var controller = TwilioBot({
 	auth_token: process.env.TWILIO_AUTHTOKEN,
 	twilio_number: process.env.TWILIO_PHONENUMBER
 });
+<<<<<<< HEAD
+
+=======
 //
+>>>>>>> dev
 let bot = controller.spawn({});
 
 controller.setupWebserver(port, function(err, webserver) {
@@ -18,7 +22,10 @@ controller.setupWebserver(port, function(err, webserver) {
 });
 
 controller.hears(FFYYCBot.hears, "message_received", function(bot, message) {
+<<<<<<< HEAD
+=======
 	console.log("[HEARD]: " + message);
+>>>>>>> dev
 	bot.startConversation(message, function(error, convo) {
 		FFYYCBot.startConversation(convo);
 	});
@@ -26,6 +33,12 @@ controller.hears(FFYYCBot.hears, "message_received", function(bot, message) {
 
 
 // ==========================================================================
+<<<<<<< HEAD
+//	 TESTS
+// ==========================================================================
+
+var app = controller.webserver;
+=======
 //	 Server routes
 // ==========================================================================
 var app = controller.webserver;
@@ -57,6 +70,7 @@ app.get("/stats", function(req, res) {
  * where the "convo" value is an array of user responses to each step in the converation flow,
  * and the "testFile" value is the name of the output file to record the conversation.
  */
+>>>>>>> dev
 app.post("/test_convo", function(req, res) {
 	var data = req.body;
 	var TestConvo = require("./test_convo.js");

@@ -2,7 +2,10 @@
 	"use strict";
 
 	var
+<<<<<<< HEAD
+=======
 		util = require("util"),
+>>>>>>> dev
 		Geocoding = require("./geocoding.js"),
 		Parse = require("parse/node"),
 		convoData = require("./data/ffyyc_bot.json"),
@@ -24,7 +27,11 @@
 		var searchDate = new Date();
 
 		var day = convo.extractResponse(askDay.convoKey);
+<<<<<<< HEAD
+		if (day == "2" || day == "tomorrow") {
+=======
 		if (day == "2" || day == "\"2\"" || day == "tomorrow") {
+>>>>>>> dev
 			searchDate.setDate(searchDate.getDate() + 1);
 		}
 
@@ -45,15 +52,28 @@
 					var loc = locations[i];
 					locs.push({name: loc.object.get("name"), address: loc.object.get("address")});
 				}
+<<<<<<< HEAD
+				completion(locs);
+			},
+			error: function(error) {
+				console.error("Error running 'search' on Parse: " + error);
+=======
 				completion(locs, searchDate);
 			},
 			error: function(error) {
 				console.error(error);
+>>>>>>> dev
 				completion(null);
 			}
 		});
 	}
 
+<<<<<<< HEAD
+	function _sayResults(convoData, convo, gc) {
+		_search(convoData, convo, gc, function(locations) {
+			if (locations != null && locations.length > 0) {
+				var text = "Here are the closest locations to you:\n";
+=======
 	/**
 	 * Logs a conversation event to the database with the given ID, user response, and flag whether the user response
 	 * was valid. The events logged to the database can be used to gather statistics on the Bot and how users interact with it.
@@ -124,10 +144,20 @@
 
 				text = util.format(closing.results, location, day);
 
+>>>>>>> dev
 				locations.forEach(function(loc) {
 					text += loc.name;
 					text += "\n";
 					text += loc.address;
+<<<<<<< HEAD
+					text += "\n";
+				});
+			} else{
+				var text = "No locations were found.";
+			}
+
+			convo.say(text + "\n" + convoData.goodbye);
+=======
 					text += "\n\n";
 				});
 			} else {
@@ -139,6 +169,7 @@
 
 			convo.say(text + closing.goodbye);
 			convo.next();
+>>>>>>> dev
 		});
 	}
 
@@ -146,11 +177,23 @@
 	 * The Bot asks the user for their current address in order to determine their current
 	 * location, and if geocoded successfully, presents the user with the results.
 	 */
+<<<<<<< HEAD
+	function _askAddress(convoData, convo) {
+=======
 	function _askAddress(user, convoData, convo) {
+>>>>>>> dev
 		var askAddress = convoData.askAddress;
 		convo.ask(askAddress.text, function(response, convo) {
 			Geocoding.geocodeLocality(response.text, "Calgary", function(err, gc) {
 				if (!err) {
+<<<<<<< HEAD
+					_sayResults(convoData, convo, gc);
+				} else {
+					_askLocationType(convoData, convo, "Could not geocode address " + response.text + ". Please try again. ");
+				}
+			});
+			convo.next();
+=======
 					_addConvoEvent(user, askAddress.convoId, {response: response.text, geocodeFound: true});
 					_sayResults(user, convoData, convo, gc);
 				} else {
@@ -161,6 +204,7 @@
 				}
 			});
 			return true; // NOTE(christian): For test purposes only. See remarks in test_convo.js.
+>>>>>>> dev
 		}, {key: askAddress.convoKey});
 	}
 
@@ -168,11 +212,17 @@
 	 * The Bot asks the user what intersection they are at in order to determine their
 	 * current location, and if geocoded successfully, presents the user with the results.
 	 */
+<<<<<<< HEAD
+	function _askIntersection(convoData, convo) {
+		var askIntersection1 = convoData.askIntersection1;
+		convo.ask(askIntersection1.text, function(response, convo) {
+=======
 	function _askIntersection(user, convoData, convo) {
 		var askIntersection1 = convoData.askIntersection1;
 		convo.ask(askIntersection1.text, function(response, convo) {
 			_addConvoEvent(user, askIntersection1.convoId, {response: response.text});
 
+>>>>>>> dev
 			var street1 = response.text;
 			var askIntersection2 = convoData.askIntersection2;
 			convo.ask(askIntersection2.text, function(response, convo) {
@@ -180,6 +230,14 @@
 				var intersectionAddress = street1 + " & " + street2;
 				Geocoding.geocodeLocality(intersectionAddress, "Calgary", function(err, gc) {
 					if (!err) {
+<<<<<<< HEAD
+						_sayResults(convoData, convo, gc);
+					} else {
+						_askLocationType(convoData, convo, "Could not geocode intersection " + response.text + ". Please try again. ");
+					}
+				});
+				convo.next();
+=======
 						_addConvoEvent(user, askIntersection2.convoId, {response: response.text, geocodeFound: true});
 						_sayResults(user, convoData, convo, gc);
 					} else {
@@ -190,6 +248,7 @@
 					}
 				});
 				return true; // NOTE(christian): For test purposes only. See remarks in test_convo.js.
+>>>>>>> dev
 			}, {key: askIntersection2.convoKey});
 			convo.next();
 		}, {key: askIntersection1.convoKey});
@@ -199,7 +258,11 @@
 	 * The Bot asks the user what place they are close to in order to determine their
 	 * current location, and if the place is found, presents the user with the results.
 	 */
+<<<<<<< HEAD
+	function _askPlace(convoData, convo) {
+=======
 	function _askPlace(user, convoData, convo) {
+>>>>>>> dev
 		var askPlace = convoData.askPlace;
 		convo.ask(askPlace.text, function(response, convo) {
 			var place = response.text.toLowerCase();
@@ -207,6 +270,14 @@
 			if (placeKey != null) {
 				var geocode = geocodings[placeKey];
 				if (geocode != null && geocode != undefined) {
+<<<<<<< HEAD
+					_sayResults(convoData, convo, geocode);
+				}
+			} else {
+				_askLocationType(convoData, convo, "Could not find " + response.text + ". Please try again. ");
+			}
+			convo.next();
+=======
 					_addConvoEvent(user, askPlace.convoId, {response: response.text, geocodeFound: true});
 					_sayResults(user, convoData, convo, geocode);
 				} else {
@@ -223,17 +294,34 @@
 				convo.next();
 			}
 			return true; // NOTE(christian): For test purposes only. See remarks in test_convo.js.
+>>>>>>> dev
 		}, {key: askPlace.convoKey});
 	}
 
 	/**
 	 * The Bot asks the user how they wish to let it know what their current location is.
 	 */
+<<<<<<< HEAD
+	function _askLocationType(convoData, convo, prefix) {
+=======
 	function _askLocationType(user, convoData, convo, prefix) {
+>>>>>>> dev
 		var askLocationType = convoData.askLocationType;
 		var askText = prefix + askLocationType.text;
 		convo.ask(askText, function(response, convo) {
 			if (askLocationType.validResponses.includes(response.text.toLowerCase())) {
+<<<<<<< HEAD
+				var locationType = response.text.toLowerCase();
+				if (locationType == "1" || locationType == "address") {
+					_askAddress(convoData, convo);
+				} else if (locationType == "2" || locationType == "intersection") {
+					_askIntersection(convoData, convo);
+				} else if (locationType == "3" || locationType == "place") {
+					_askPlace(convoData, convo);
+				}
+
+				convo.next();
+=======
 				_addConvoEvent(user, askLocationType.convoId, {response: response.text, validResponse: true});
 
 				var locationType = response.text.toLowerCase();
@@ -250,11 +338,41 @@
 				convo.next();
 			} else {
 				_addConvoEvent(user, askLocationType.convoId, {response: response.text, validResponse: false});
+>>>>>>> dev
 			}
 		}, {key: askLocationType.convoKey});
 	}
 
 	/**
+<<<<<<< HEAD
+	 * Initiates a conversation instance with the Bot where it greets the user
+	 * and asks the first question.
+	 */
+	function _startConversation(convo) {
+		convo.say("Food Finder YYC will be live July 3. Check our main site foodfinderyyc.com and leave an email address to be reminded when we launch.");
+
+/* NOTE(christian): Disable for now, and only reply with temporary auto-response.
+		Parse.initialize(config.appId, config.javascriptKey);
+		Parse.serverURL = config.serverURL;
+
+		var greeting = convoData.greeting;
+		var askDay = convoData.askDay;
+		var fullGreeting = greeting + " " + askDay.text;
+
+		convo.ask(fullGreeting, function(response, convo) {
+			convo.setTimeout(_timeoutMilliseconds);
+			convo.onTimeout(function(convo) {
+				convo.say(convoData.timeout);
+				convo.stop();
+			});
+
+			if (askDay.validResponses.includes(response.text.toLowerCase())) {
+				_askLocationType(convoData, convo, "");
+				convo.next();
+			}
+		}, {key: askDay.convoKey});
+	*/
+=======
 	 * Starts the conversation with the Bot's greeting and first question. If the user parameter is non-null,
 	 * it will be used to track user responses in the database.
 	 */
@@ -310,6 +428,7 @@
 				_startWithUser(null, convoData, convo);
 			}
 		});
+>>>>>>> dev
 	}
 
 	module.exports = {
