@@ -278,38 +278,39 @@
 	 * Initiates the conversation between the user and Bot with the given convo object received from Botkit.
 	 */
 	function _startConversation(convo) {
-		convo.setTimeout(_timeoutMilliseconds);
-		convo.onTimeout(function(convo) {
-			convo.say(convoData.timeout);
-			convo.stop();
-		});
-
-		Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
-		Parse.serverURL = process.env.PARSE_SERVERURL;
-
-		var user = {};
-		user.phoneNumber = convo.source_message.user;
-		user.startTime = new Date();
-
-		var ConvoEvent = Parse.Object.extend("ConvoEvent");
-		var query = new Parse.Query(ConvoEvent);
-		query.equalTo("user", user.phoneNumber);
-		query.descending("userSession");
-		query.find({
-			success: function(results) {
-				if (results.length > 0) {
-					var latest = results[0];
-					user.sessionNumber = latest.get("userSession") + 1;
-				} else {
-					user.sessionNumber = 1;
-				}
-				_startWithUser(user, convoData, convo);
-			},
-			error: function(error) {
-				console.error(error);
-				_startWithUser(null, convoData, convo);
-			}
-		});
+		convo.say("Food Finder YYC will be live July 3. Check our main site foodfinderyyc.com and leave an email address to be reminded when we launch.");
+		// convo.setTimeout(_timeoutMilliseconds);
+		// convo.onTimeout(function(convo) {
+		// 	convo.say(convoData.timeout);
+		// 	convo.stop();
+		// });
+		//
+		// Parse.initialize(process.env.PARSE_APPID, process.env.PARSE_JAVASCRIPTKEY, process.env.PARSE_MASTERKEY);
+		// Parse.serverURL = process.env.PARSE_SERVERURL;
+		//
+		// var user = {};
+		// user.phoneNumber = convo.source_message.user;
+		// user.startTime = new Date();
+		//
+		// var ConvoEvent = Parse.Object.extend("ConvoEvent");
+		// var query = new Parse.Query(ConvoEvent);
+		// query.equalTo("user", user.phoneNumber);
+		// query.descending("userSession");
+		// query.find({
+		// 	success: function(results) {
+		// 		if (results.length > 0) {
+		// 			var latest = results[0];
+		// 			user.sessionNumber = latest.get("userSession") + 1;
+		// 		} else {
+		// 			user.sessionNumber = 1;
+		// 		}
+		// 		_startWithUser(user, convoData, convo);
+		// 	},
+		// 	error: function(error) {
+		// 		console.error(error);
+		// 		_startWithUser(null, convoData, convo);
+		// 	}
+		// });
 	}
 
 	module.exports = {
