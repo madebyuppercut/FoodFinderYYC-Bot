@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Chat bot for FoodFinderYYC",
   "engines": {
-    "node": "6.10.2"
+    "node": "6.11.1"
   },
   "main": "index.js",
   "scripts": {
